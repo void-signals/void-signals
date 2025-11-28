@@ -1,0 +1,8 @@
+# melos_managed_dependency_overrides: void_signals,void_signals_flutter,void_signals_hooks
+dependency_overrides:
+  void_signals:
+    path: ../packages/void_signals
+  void_signals_flutter:
+    path: ../packages/void_signals_flutter
+  void_signals_hooks:
+    path: ../packages/void_signals_hooks
