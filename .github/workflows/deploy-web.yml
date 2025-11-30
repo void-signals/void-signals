@@ -34,6 +34,10 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Enable web platform
+        working-directory: example
+        run: flutter create . --platforms web
+
       - name: Get dependencies
         working-directory: example
         run: flutter pub get
