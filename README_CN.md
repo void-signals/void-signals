@@ -202,13 +202,13 @@ void_signals 基于 alien-signals 构建，是目前最快的信号实现之一�
 <!-- BENCHMARK_SUMMARY_START -->
 | Rank | Framework | Wins | Pass Rate |
 |------|-----------|------|-----------|
-| 🥇 | void_signals | 24 | 100% |
-| 🥈 | alien_signals | 9 | 100% |
-| 🥉 | state_beacon | 3 | 100% |
-| 4 | preact_signals | 1 | 100% |
-| 5 | solidart | 0 | 100% |
-| 6 | mobx | 0 | 100% |
-| 7 | signals_core | 0 | 100% |
+| 🥇 | [void_signals](https://pub.dev/packages/void_signals) ([1.0.0](https://pub.dev/packages/void_signals/versions/1.0.0)) | 26 | 100% |
+| 🥈 | [alien_signals](https://pub.dev/packages/alien_signals) ([2.0.1](https://pub.dev/packages/alien_signals/versions/2.0.1)) | 6 | 100% |
+| 🥉 | [state_beacon](https://pub.dev/packages/state_beacon_core) ([1.0.1](https://pub.dev/packages/state_beacon_core/versions/1.0.1)) | 2 | 100% |
+| 4 | [preact_signals](https://pub.dev/packages/preact_signals) ([1.9.3](https://pub.dev/packages/preact_signals/versions/1.9.3)) | 1 | 100% |
+| 5 | [mobx](https://pub.dev/packages/mobx) ([2.5.0](https://pub.dev/packages/mobx/versions/2.5.0)) | 0 | 100% |
+| 6 | [signals_core](https://pub.dev/packages/signals_core) ([6.2.0](https://pub.dev/packages/signals_core/versions/6.2.0)) | 0 | 100% |
+| 7 | [solidart](https://pub.dev/packages/solidart) ([2.8.3](https://pub.dev/packages/solidart/versions/2.8.3)) | 0 | 100% |
 <!-- BENCHMARK_SUMMARY_END -->
 
 基准测试包括：

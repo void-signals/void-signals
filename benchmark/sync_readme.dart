@@ -30,16 +30,20 @@ void main() async {
     exit(1);
   }
 
+  // Extract version info from Results table header
+  final versionMap = _extractVersionsFromHeader(resultsSection);
+
   // Update benchmark/README.md with full results
   await _updateBenchmarkReadme(resultsSection, summarySection);
 
-  // Extract summary table for main README files
+  // Extract summary table for main README files and add version links
   final summaryTable = _extractSummaryTable(summarySection);
   if (summaryTable != null) {
+    final summaryWithVersions = _addVersionsToSummary(summaryTable, versionMap);
     // Update root README.md
-    await _updateMainReadme('../README.md', summaryTable);
+    await _updateMainReadme('../README.md', summaryWithVersions);
     // Update root README_CN.md
-    await _updateMainReadme('../README_CN.md', summaryTable);
+    await _updateMainReadme('../README_CN.md', summaryWithVersions);
   }
 }
 
@@ -150,6 +154,79 @@ String? _extractSummaryTable(String? summarySection) {
   }
 
   return tableLines.isNotEmpty ? tableLines.join('\n') : null;
+}
+
+/// Extract version info from the Results table header
+/// Returns a map of framework name to version link markdown
+Map<String, String> _extractVersionsFromHeader(String resultsSection) {
+  final versionMap = <String, String>{};
+  final lines = resultsSection.split('\n');
+
+  // Find the header line (starts with | Test |)
+  for (final line in lines) {
+    if (line.trim().startsWith('| Test |')) {
+      // Parse each column header
+      // Format: framework_name ([version](url))
+      final regex = RegExp(r'(\w+)\s*\(\[([^\]]+)\]\(([^)]+)\)\)');
+      final matches = regex.allMatches(line);
+
+      for (final match in matches) {
+        final frameworkName = match.group(1)!;
+        final version = match.group(2)!;
+        final url = match.group(3)!;
+        versionMap[frameworkName] =
+            '[$frameworkName](https://pub.dev/packages/${_getPackageName(frameworkName)}) ([${version}]($url))';
+      }
+      break;
+    }
+  }
+
+  return versionMap;
+}
+
+/// Get the actual package name for a framework
+String _getPackageName(String framework) {
+  const packageNameMap = {
+    'state_beacon': 'state_beacon_core',
+    'signals_core': 'signals_core',
+    'alien_signals': 'alien_signals',
+    'mobx': 'mobx',
+    'preact_signals': 'preact_signals',
+    'solidart': 'solidart',
+    'void_signals': 'void_signals',
+  };
+  return packageNameMap[framework] ?? framework;
+}
+
+/// Add version links to the Summary table
+String _addVersionsToSummary(
+  String summaryTable,
+  Map<String, String> versionMap,
+) {
+  final lines = summaryTable.split('\n');
+  final result = <String>[];
+
+  for (final line in lines) {
+    if (line.contains('|') && !line.contains('---') && !line.contains('Rank')) {
+      // This is a data row, replace framework name with version link
+      var modifiedLine = line;
+      for (final entry in versionMap.entries) {
+        // Match the framework name that appears after | emoji | or | number |
+        final pattern = RegExp(r'\|\s*' + entry.key + r'\s*\|');
+        if (pattern.hasMatch(modifiedLine)) {
+          modifiedLine = modifiedLine.replaceFirst(
+            pattern,
+            '| ${entry.value} |',
+          );
+        }
+      }
+      result.add(modifiedLine);
+    } else {
+      result.add(line);
+    }
+  }
+
+  return result.join('\n');
 }
 
 /// Extract a section from markdown content
