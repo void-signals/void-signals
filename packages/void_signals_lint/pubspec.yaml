@@ -27,5 +27,5 @@ topics:
   - linter
   - analyzer
   - signals
-  - void_signals
+  - void-signals
   - custom-lint
