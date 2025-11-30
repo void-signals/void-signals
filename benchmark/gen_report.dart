@@ -34,6 +34,20 @@ void main() async {
     exit(1);
   }
 
+  // Package name mappings (framework name -> actual package name)
+  final packageNameMap = <String, String>{
+    'state_beacon': 'state_beacon_core',
+    'signals_core': 'signals_core',
+    'alien_signals': 'alien_signals',
+    'mobx': 'mobx',
+    'preact_signals': 'preact_signals',
+    'solidart': 'solidart',
+    'void_signals': 'void_signals',
+  };
+
+  // Read framework versions from pubspec.lock files
+  final versions = await getFrameworkVersions(frameworks, packageNameMap);
+
   final sortedTests = results.keys.toList()..sort();
 
   // Calculate wins for each framework first (needed for sorting)
@@ -85,10 +99,18 @@ void main() async {
   buffer.writeln('## Results');
   buffer.writeln();
 
-  // Header row
+  // Header row with version links
   buffer.write('| Test |');
   for (final f in frameworks) {
-    buffer.write(' $f |');
+    final version = versions[f];
+    final packageName = packageNameMap[f] ?? f;
+    if (version != null) {
+      buffer.write(
+        ' $f ([${version}](https://pub.dev/packages/$packageName/versions/$version)) |',
+      );
+    } else {
+      buffer.write(' $f |');
+    }
   }
   buffer.writeln();
 
@@ -164,6 +186,7 @@ void main() async {
   final jsonReport = {
     'timestamp': DateTime.now().toIso8601String(),
     'frameworks': frameworks,
+    'versions': versions,
     'results': results.map(
       (test, fResults) => MapEntry(
         test,
@@ -181,6 +204,72 @@ void main() async {
   await File(
     'bench/benchmark_results.json',
   ).writeAsString(const JsonEncoder.withIndent('  ').convert(jsonReport));
+}
+
+/// Get framework versions from pubspec.lock files
+Future<Map<String, String>> getFrameworkVersions(
+  List<String> frameworks,
+  Map<String, String> packageNameMap,
+) async {
+  final versions = <String, String>{};
+
+  for (final framework in frameworks) {
+    final lockFile = File('frameworks/$framework/pubspec.lock');
+    if (!lockFile.existsSync()) {
+      // For void_signals, read version from its own pubspec.yaml
+      if (framework == 'void_signals') {
+        final pubspecFile = File('../packages/void_signals/pubspec.yaml');
+        if (pubspecFile.existsSync()) {
+          final content = await pubspecFile.readAsString();
+          final versionMatch = RegExp(
+            r'^version:\s*(.+)$',
+            multiLine: true,
+          ).firstMatch(content);
+          if (versionMatch != null) {
+            versions[framework] = versionMatch.group(1)!.trim();
+          }
+        }
+      }
+      continue;
+    }
+
+    final content = await lockFile.readAsString();
+    final packageName = packageNameMap[framework] ?? framework;
+
+    // Parse YAML-like pubspec.lock to find the package version
+    final lines = content.split('\n');
+    bool inTargetPackage = false;
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+
+      // Check if we're entering the target package section
+      if (line.trim() == '$packageName:') {
+        inTargetPackage = true;
+        continue;
+      }
+
+      // If we're in the target package, look for version
+      if (inTargetPackage) {
+        final versionMatch = RegExp(
+          r'^\s+version:\s*"?([^"]+)"?$',
+        ).firstMatch(line);
+        if (versionMatch != null) {
+          versions[framework] = versionMatch.group(1)!.trim();
+          break;
+        }
+
+        // If we hit another package (no indentation), we've left our target
+        if (line.isNotEmpty &&
+            !line.startsWith(' ') &&
+            !line.startsWith('\t')) {
+          break;
+        }
+      }
+    }
+  }
+
+  return versions;
 }
 
 class BenchResult {
