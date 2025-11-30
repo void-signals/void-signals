@@ -21,11 +21,36 @@
 
 ## 特性
 
+### 核心响应式
 - ⚡ **高性能**: 基于 alien-signals，最快的信号实现之一
 - 🎯 **零开销抽象**: 使用 Dart 扩展类型实现零成本抽象
 - 🔄 **细粒度响应**: 只更新真正变化的部分
 - 🧩 **极简 API**: 只需 `signal()`、`computed()`、`effect()`
 - 📦 **Tree Shakable**: 只打包你使用的功能
+
+### 高级异步支持
+- 🔮 **AsyncValue**: Riverpod 风格的密封类，处理 loading/data/error 状态
+- ⏳ **AsyncComputed**: 带自动依赖追踪的异步计算值
+- 🌊 **StreamComputed**: 订阅流并自动管理生命周期
+- 🔗 **combineAsync**: 合并多个异步值为一个
+
+### 生命周期管理（Riverpod 风格）
+- 🎯 **SignalLifecycle**: `onDispose`、`onCancel`、`onResume` 回调
+- 🔒 **KeepAliveLink**: 阻止信号自动释放
+- 📡 **SignalSubscription**: 暂停/恢复订阅，处理错过的更新
+- 🎛️ **SubscriptionController**: 统一管理多个订阅
+
+### 错误处理与重试
+- ✅ **Result 类型**: 类型安全的 `Result<T>`，用于可能失败的操作
+- 🔄 **重试逻辑**: 指数退避与抖动的异步操作重试
+- 🛡️ **runGuarded/runGuardedAsync**: 安全执行并捕获错误
+- ⚠️ **SignalErrorHandler**: 信号操作的全局错误处理器
+
+### 工具函数
+- 📦 **batch**: 批量更新合并为单次刷新
+- 🚫 **untrack**: 读取信号但不创建依赖
+- 🎯 **trigger**: 手动触发访问信号的订阅者
+- 🔍 **类型检查**: `isSignal()`、`isComputed()`、`isEffect()`、`isEffectScope()`
 
 ## 安装
 
@@ -282,6 +307,247 @@ isEffect(e);        // true
 isEffectScope(scope);  // true
 ```
 
+## 生命周期管理
+
+受 Riverpod 健壮模式启发，void_signals 提供生产级的生命周期钩子。
+
+### SignalSubscription - 暂停/恢复更新
+
+```dart
+final count = signal(0);
+
+// 使用变更监听器订阅
+final sub = count.subscribe(
+  (previous, current) => print('变化: $previous -> $current'),
+  fireImmediately: true,
+);
+
+count.value = 1;  // 打印: 变化: 0 -> 1
+
+// 暂停订阅 - 更新会排队
+sub.pause();
+count.value = 2;  // 不打印
+count.value = 3;  // 不打印
+
+// 恢复 - 传递最后一次更新
+sub.resume();  // 打印: 变化: 1 -> 3
+
+// 读取当前值而不创建依赖
+print(sub.read());  // 3
+
+// 完成时关闭
+sub.close();
+```
+
+### SignalLifecycle Mixin - 生命周期回调
+
+```dart
+// 创建带生命周期管理的信号
+class ManagedSignal<T> extends Signal<T> with SignalLifecycle {
+  ManagedSignal(super.value);
+}
+
+final sig = ManagedSignal(0);
+
+// 注册销毁回调
+sig.onDispose(() {
+  print('信号已销毁 - 清理资源');
+});
+
+// 当监听器添加/移除时调用
+sig.onAddListener(() => print('监听器已添加'));
+sig.onRemoveListener(() => print('监听器已移除'));
+
+// 当所有监听器暂停/移除时调用
+sig.onCancel(() => print('所有监听器已取消'));
+sig.onResume(() => print('监听器已恢复'));
+
+// 稍后，销毁并运行所有回调
+sig.dispose();
+```
+
+### KeepAliveLink - 阻止销毁
+
+```dart
+final sig = ManagedSignal(0);
+
+// 创建保活链接以阻止销毁
+final keepAlive = sig.keepAlive();
+
+print(sig.hasKeepAliveLinks);  // true
+
+// 稍后，允许销毁
+keepAlive.close();
+print(keepAlive.closed);  // true
+```
+
+### SubscriptionController - 管理多个订阅
+
+```dart
+final controller = SubscriptionController();
+
+// 添加要一起管理的订阅
+controller.add(signal1.subscribe((_, v) => print('信号 1: $v')));
+controller.add(signal2.subscribe((_, v) => print('信号 2: $v')));
+controller.add(signal3.subscribe((_, v) => print('信号 3: $v')));
+
+// 一次暂停所有订阅
+controller.pauseAll();
+
+// 恢复所有订阅
+controller.resumeAll();
+
+// 销毁控制器并关闭所有订阅
+controller.dispose();
+```
+
+### 全局错误处理器
+
+```dart
+// 设置全局错误处理
+SignalErrorHandler.setHandler((error, stackTrace) {
+  print('信号错误: $error');
+  // 记录到崩溃报告服务（如 Sentry、Firebase Crashlytics）
+  crashlytics.recordError(error, stackTrace);
+});
+
+// 稍后，清除处理器
+SignalErrorHandler.clearHandler();
+```
+
+## 错误处理与重试
+
+### Result 类型 - 安全操作
+
+```dart
+// 包装可能失败的操作
+final result = runGuarded(() => someRiskyOperation());
+
+// 模式匹配
+switch (result) {
+  case ResultData(:final value):
+    print('成功: $value');
+  case ResultError(:final error, :final stackTrace):
+    print('错误: $error');
+}
+
+// 便捷方法
+result.ifValue((value) => print('获取到: $value'));
+result.ifError((error, stack) => print('失败: $error'));
+
+// 获取值或回退
+final value = result.getOrElse(defaultValue);
+final computed = result.getOrElseCompute(() => computeDefault());
+
+// 转换值
+final mapped = result.map((value) => value.toString());
+
+// 转换为 AsyncValue
+final asyncValue = result.toAsyncValue();
+```
+
+### 异步错误处理
+
+```dart
+// 异步版本
+final result = await runGuardedAsync(() => fetchData());
+
+result.ifValue((data) => updateUI(data));
+result.ifError((error, stack) => showErrorDialog(error));
+```
+
+### 指数退避重试
+
+```dart
+// 配置重试行为
+final config = RetryConfig(
+  maxAttempts: 3,
+  baseDelay: Duration(milliseconds: 100),
+  maxDelay: Duration(seconds: 10),
+  exponentialBackoff: true,
+  jitter: 0.1,  // 添加随机性防止惊群效应
+  shouldRetry: (error, attempt) => error is NetworkError,
+);
+
+// 重试异步操作
+final result = await retry(
+  () => fetchDataFromServer(),
+  config: config,
+  onRetry: (error, attempt) => print('重试第 $attempt 次: $error'),
+);
+
+// 同步重试（无延迟）
+final syncResult = retrySync(
+  () => parseData(input),
+  config: RetryConfig(maxAttempts: 3),
+);
+```
+
+### AsyncSignal - 全功能异步状态
+
+```dart
+// 创建时自动刷新
+final users = AsyncSignal.autoRefresh(
+  fetch: () => api.fetchUsers(),
+  retryConfig: RetryConfig(maxAttempts: 3),
+);
+
+// 懒加载 - 直到调用 refresh() 才开始
+final lazyData = AsyncSignal.lazy(
+  fetch: () => api.fetchData(),
+);
+
+// 从 Future 创建
+final fromFuture = AsyncSignal.fromFuture(
+  someAsyncOperation(),
+  initialValue: cachedData,
+);
+
+// 从 Stream 创建
+final fromStream = AsyncSignal.fromStream(
+  webSocket.messages,
+);
+
+// 检查状态
+print(users.state);       // AsyncState.loading | .data | .error
+print(users.isLoading);   // true/false
+print(users.hasData);     // true/false
+print(users.hasError);    // true/false
+
+// 访问数据
+print(users.data);        // T? - 当前数据
+print(users.error);       // Object? - 当前错误
+print(users.stackTrace);  // StackTrace? - 错误堆栈
+
+// 手动控制
+await users.refresh();    // 强制刷新
+users.setValue(newData);  // 直接设置值
+users.setError(error);    // 直接设置错误
+users.reset();            // 重置为初始状态
+
+// 监听信号进行响应式更新
+effect(() {
+  final state = users.stateSignal();
+  print('用户状态: $state');
+});
+
+// 清理
+users.dispose();
+```
+
+### 安全信号扩展
+
+```dart
+final sig = signal(0);
+
+// 尝试可能失败的操作
+final readResult = sig.tryRead();      // Result<T>
+final updateResult = sig.tryUpdate(5); // Result<void>
+
+// 带错误处理的更新
+sig.updateSafe(newValue, onError: (e) => print('更新失败: $e'));
+```
+
 ## 性能提示
 
 1. **使用 `peek()` 进行无追踪读取**，而不是包装在 `untrack()` 中
@@ -289,6 +555,7 @@ isEffectScope(scope);  // true
 3. **使用副作用作用域** 管理副作用生命周期
 4. **优先使用 computed 而非 effects** 处理派生状态
 5. **将信号放在文件顶层** 以获得更好的 tree shaking
+6. **需要应用挂起更新时使用 `syncPeek()`** 而无需追踪
 
 ## 相关包
 

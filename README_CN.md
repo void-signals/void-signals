@@ -21,12 +21,31 @@
 
 ## 特性
 
+### 核心响应式
 - ⚡ **高性能**: 基于 alien-signals，最快的信号实现之一
 - 🎯 **零开销抽象**: 使用 Dart 扩展类型实现零成本抽象
 - 🔄 **细粒度响应**: 只更新真正变化的部分
 - 🧩 **极简 API**: 只需 `signal()`、`computed()`、`effect()` 三个概念
 - 📦 **Flutter 支持**: 与 Flutter Widget 无缝集成
 - 🪝 **Hooks 支持**: 可选的 flutter_hooks 集成
+
+### 高级异步支持
+- 🔮 **AsyncValue**: Riverpod 风格的密封类，处理 loading/data/error 状态
+- ⏳ **AsyncComputed**: 带自动依赖追踪的异步计算值
+- 🌊 **StreamComputed**: 订阅流并自动管理生命周期
+- 🔗 **combineAsync**: 合并多个异步值为一个
+
+### 生命周期管理（Riverpod 风格）
+- 🎯 **SignalLifecycle**: `onDispose`、`onCancel`、`onResume` 回调
+- 🔒 **KeepAliveLink**: 阻止信号自动释放
+- 📡 **SignalSubscription**: 暂停/恢复订阅，处理错过的更新
+- 🎛️ **SubscriptionController**: 统一管理多个订阅
+
+### 错误处理与重试
+- ✅ **Result 类型**: 类型安全的 `Result<T>`，用于可能失败的操作
+- 🔄 **重试逻辑**: 指数退避与抖动的异步操作重试
+- 🛡️ **runGuarded/runGuardedAsync**: 安全执行并捕获错误
+- ⚠️ **SignalErrorHandler**: 信号操作的全局错误处理器
 
 ## 包列表
 
@@ -183,6 +202,79 @@ effect(() {
   untrack(() => otherSignal());  // 不创建依赖
 });
 ```
+
+### AsyncComputed (异步计算值)
+
+处理异步操作并自动追踪依赖：
+
+```dart
+final userId = signal(1);
+
+// AsyncComputed 自动追踪依赖
+final user = asyncComputed(() async {
+  final id = userId();  // 同步追踪
+  return await fetchUser(id);
+});
+
+// 使用异步状态
+user().when(
+  loading: () => print('加载中...'),
+  data: (user) => print('用户: ${user.name}'),
+  error: (e, _) => print('错误: $e'),
+);
+
+// 当 userId 变化时，user 自动重新获取
+userId.value = 2;
+```
+
+### StreamComputed (流计算值)
+
+订阅流并自动管理生命周期：
+
+```dart
+final roomId = signal('room1');
+
+final messages = streamComputed(() {
+  return chatService.messagesStream(roomId());
+});
+
+// roomId 变化时自动重新订阅
+roomId.value = 'room2';
+```
+
+### 生命周期管理
+
+Riverpod 风格的生命周期钩子：
+
+```dart
+final count = signal(0);
+
+// 带暂停/恢复支持的订阅
+final sub = count.subscribe(
+  (prev, current) => print('变化: $prev -> $current'),
+);
+
+sub.pause();   // 暂时停止接收更新
+sub.resume();  // 恢复接收更新
+sub.close();   // 永久停止监听
+```
+
+### 带重试的错误处理
+
+```dart
+final config = RetryConfig(
+  maxAttempts: 3,
+  exponentialBackoff: true,
+  jitter: 0.1,
+);
+
+final result = await retry(
+  () => fetchData(),
+  config: config,
+);
+```
+
+完整文档请参阅 [void_signals 包 README](packages/void_signals/README_CN.md)。
 
 ## 性能
 

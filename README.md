@@ -21,12 +21,31 @@
 
 ## Features
 
+### Core Reactivity
 - ⚡ **High Performance**: Based on alien-signals, one of the fastest signal implementations
 - 🎯 **Zero Overhead Abstractions**: Uses Dart extension types for zero-cost abstractions
 - 🔄 **Fine-Grained Reactivity**: Only updates what actually changed
 - 🧩 **Minimal API**: Just `signal()`, `computed()`, `effect()` - that's it!
 - 📦 **Flutter Ready**: Seamless integration with Flutter widgets
 - 🪝 **Hooks Support**: Optional flutter_hooks integration
+
+### Advanced Async Support
+- 🔮 **AsyncValue**: Riverpod-style sealed class for loading/data/error states
+- ⏳ **AsyncComputed**: Async computed values with automatic dependency tracking
+- 🌊 **StreamComputed**: Subscribe to streams with automatic lifecycle management
+- 🔗 **combineAsync**: Combine multiple async values into one
+
+### Lifecycle Management (Riverpod-inspired)
+- 🎯 **SignalLifecycle**: `onDispose`, `onCancel`, `onResume` callbacks
+- 🔒 **KeepAliveLink**: Prevent automatic disposal of signals
+- 📡 **SignalSubscription**: Pause/resume subscriptions with missed update handling
+- 🎛️ **SubscriptionController**: Manage multiple subscriptions together
+
+### Error Handling & Retry
+- ✅ **Result Type**: Type-safe `Result<T>` for operations that can fail
+- 🔄 **Retry Logic**: Exponential backoff with jitter for async operations
+- 🛡️ **runGuarded/runGuardedAsync**: Safe execution with error capture
+- ⚠️ **SignalErrorHandler**: Global error handler for signal operations
 
 ## Packages
 
@@ -187,6 +206,79 @@ effect(() {
   untrack(() => otherSignal());  // Does not create dependency
 });
 ```
+
+### Async Computed
+
+Handle async operations with automatic dependency tracking:
+
+```dart
+final userId = signal(1);
+
+// AsyncComputed automatically tracks dependencies
+final user = asyncComputed(() async {
+  final id = userId();  // Tracked synchronously
+  return await fetchUser(id);
+});
+
+// Use the async state
+user().when(
+  loading: () => print('Loading...'),
+  data: (user) => print('User: ${user.name}'),
+  error: (e, _) => print('Error: $e'),
+);
+
+// When userId changes, user automatically refetches
+userId.value = 2;
+```
+
+### Stream Computed
+
+Subscribe to streams with automatic lifecycle management:
+
+```dart
+final roomId = signal('room1');
+
+final messages = streamComputed(() {
+  return chatService.messagesStream(roomId());
+});
+
+// Automatically resubscribes when roomId changes
+roomId.value = 'room2';
+```
+
+### Lifecycle Management
+
+Riverpod-inspired lifecycle hooks:
+
+```dart
+final count = signal(0);
+
+// Subscribe with pause/resume support
+final sub = count.subscribe(
+  (prev, current) => print('Changed: $prev -> $current'),
+);
+
+sub.pause();   // Temporarily stop receiving updates
+sub.resume();  // Resume receiving updates
+sub.close();   // Stop listening permanently
+```
+
+### Error Handling with Retry
+
+```dart
+final config = RetryConfig(
+  maxAttempts: 3,
+  exponentialBackoff: true,
+  jitter: 0.1,
+);
+
+final result = await retry(
+  () => fetchData(),
+  config: config,
+);
+```
+
+For complete documentation, see the [void_signals package README](packages/void_signals/README.md).
 
 ## Performance
 
