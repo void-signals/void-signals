@@ -390,7 +390,6 @@ void main() {
 
     test('queueUpdate exception does not stop other updates', () async {
       final a = signal(0);
-      final b = signal(0);
       final c = signal(0);
 
       queueUpdate(() => a.value = 1);

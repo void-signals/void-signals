@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:void_signals_flutter/void_signals_flutter.dart';
@@ -447,7 +446,8 @@ void main() {
           home: Scaffold(
             body: InfiniteScrollList<int>(
               paginatedSignal: paginated,
-              itemBuilder: (context, item, index) => ListTile(title: Text('$item')),
+              itemBuilder: (context, item, index) =>
+                  ListTile(title: Text('$item')),
             ),
           ),
         ),
@@ -478,7 +478,8 @@ void main() {
           home: Scaffold(
             body: InfiniteScrollList<int>(
               paginatedSignal: paginated,
-              itemBuilder: (context, item, index) => ListTile(title: Text('$item')),
+              itemBuilder: (context, item, index) =>
+                  ListTile(title: Text('$item')),
               emptyBuilder: (context) => const Text('Empty'),
             ),
           ),
@@ -505,7 +506,8 @@ void main() {
           home: Scaffold(
             body: InfiniteScrollList<int>(
               paginatedSignal: paginated,
-              itemBuilder: (context, item, index) => ListTile(title: Text('$item')),
+              itemBuilder: (context, item, index) =>
+                  ListTile(title: Text('$item')),
               errorBuilder: (context, error, retry) =>
                   ElevatedButton(onPressed: retry, child: const Text('Retry')),
             ),
@@ -536,7 +538,8 @@ void main() {
           home: Scaffold(
             body: InfiniteScrollList<String>(
               paginatedSignal: paginated,
-              itemBuilder: (context, item, index) => ListTile(title: Text(item)),
+              itemBuilder: (context, item, index) =>
+                  ListTile(title: Text(item)),
             ),
           ),
         ),
@@ -567,7 +570,8 @@ void main() {
           home: Scaffold(
             body: InfiniteScrollList<String>(
               paginatedSignal: paginated,
-              itemBuilder: (context, item, index) => ListTile(title: Text(item)),
+              itemBuilder: (context, item, index) =>
+                  ListTile(title: Text(item)),
               header: const Text('Header'),
               footer: const Text('Footer'),
             ),
@@ -616,13 +620,10 @@ void main() {
   group('setupInfiniteScroll', () {
     test('should create effect for scroll controller', () {
       final scrollController = ScrollController();
-      var loadMoreCalled = false;
 
       final eff = setupInfiniteScroll(
         scrollController: scrollController,
-        onLoadMore: () async {
-          loadMoreCalled = true;
-        },
+        onLoadMore: () async {},
         hasMore: () => true,
         isLoading: () => false,
       );

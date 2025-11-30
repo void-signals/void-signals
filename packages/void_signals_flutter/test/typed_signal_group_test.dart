@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:void_signals/void_signals.dart';
 import 'package:void_signals_flutter/void_signals_flutter.dart';
 
 void main() {

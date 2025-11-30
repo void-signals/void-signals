@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:void_signals_flutter/void_signals_flutter.dart';
@@ -147,8 +145,7 @@ void main() {
 
   group('CountdownSignal', () {
     test('should create with initial duration', () {
-      final countdown =
-          countdownSignal(const Duration(seconds: 10));
+      final countdown = countdownSignal(const Duration(seconds: 10));
       expect(countdown.remaining.value, equals(const Duration(seconds: 10)));
       expect(countdown.isFinished.value, isFalse);
       expect(countdown.isRunning.value, isFalse);
@@ -235,7 +232,8 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       countdown.restart();
-      expect(countdown.remaining.value, equals(const Duration(milliseconds: 200)));
+      expect(
+          countdown.remaining.value, equals(const Duration(milliseconds: 200)));
       expect(countdown.isRunning.value, isTrue);
       countdown.dispose();
     });

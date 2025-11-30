@@ -677,4 +677,4 @@ class _Person {
   _Person(this.name, this.age);
 }
 
-enum _Status { pending, inProgress, completed, failed }
+enum _Status { pending, completed }

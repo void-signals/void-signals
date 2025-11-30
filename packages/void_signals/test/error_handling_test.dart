@@ -320,11 +320,9 @@ void main() {
     });
 
     test('should throw after max attempts', () async {
-      var attempts = 0;
       expect(
         () async => await retry(
           () async {
-            attempts++;
             throw Exception('always fail');
           },
           config: const RetryConfig(
@@ -410,11 +408,9 @@ void main() {
     });
 
     test('should throw after max attempts', () {
-      var attempts = 0;
       expect(
         () => retrySync(
           () {
-            attempts++;
             throw Exception('always fail');
           },
           config: const RetryConfig(maxAttempts: 3),

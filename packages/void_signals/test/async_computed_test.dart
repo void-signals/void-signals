@@ -715,20 +715,22 @@ void main() {
         throw Exception('test error');
       });
 
+      Object? firstError;
       try {
         await computed.future;
-        fail('Should have thrown');
       } catch (e) {
-        expect(e.toString(), contains('test error'));
+        firstError = e;
       }
+      expect(firstError.toString(), contains('test error'));
 
       // Calling future again should return the same error
+      Object? secondError;
       try {
         await computed.future;
-        fail('Should have thrown');
       } catch (e) {
-        expect(e.toString(), contains('test error'));
+        secondError = e;
       }
+      expect(secondError.toString(), contains('test error'));
 
       computed.dispose();
     });
@@ -1148,11 +1150,9 @@ void main() {
 
     test('concurrent async computeds with shared dependency', () async {
       final userId = signal(1);
-      var fetchCount = 0;
 
       final user = asyncComputed(() async {
         final id = userId();
-        fetchCount++;
         await Future.delayed(const Duration(milliseconds: 20));
         return 'User $id';
       });
@@ -1289,7 +1289,6 @@ void main() {
 
     test('stream computed with multiple rapid emissions', () async {
       final controller = StreamController<int>.broadcast();
-      var lastReceived = 0;
 
       final stream = streamComputed(() {
         return controller.stream;
@@ -1298,7 +1297,6 @@ void main() {
       // Rapid emissions
       for (var i = 1; i <= 10; i++) {
         controller.add(i);
-        lastReceived = i;
       }
 
       await Future.delayed(const Duration(milliseconds: 50));

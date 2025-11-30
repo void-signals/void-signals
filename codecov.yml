@@ -1,0 +1,37 @@
+codecov:
+  require_ci_to_pass: yes
+  notify:
+    wait_for_ci: yes
+
+coverage:
+  precision: 2
+  round: down
+  range: "60...100"
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+    patch:
+      default:
+        target: auto
+        threshold: 5%
+
+flags:
+  void_signals:
+    paths:
+      - packages/void_signals/
+    carryforward: true
+  void_signals_flutter:
+    paths:
+      - packages/void_signals_flutter/
+    carryforward: true
+  void_signals_hooks:
+    paths:
+      - packages/void_signals_hooks/
+    carryforward: true
+
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true

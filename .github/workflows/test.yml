@@ -52,6 +52,7 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/void_signals/coverage/lcov.info
           flags: void_signals
           fail_ci_if_error: false
@@ -95,6 +96,7 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: packages/${{ matrix.package }}/coverage/lcov.info
           flags: ${{ matrix.package }}
           fail_ci_if_error: false
@@ -144,7 +146,8 @@ jobs:
 
       - name: Analyze
         working-directory: packages/void_signals_lint
-        run: dart analyze --fatal-infos
+        # Note: Not using --fatal-infos because custom_lint has deprecated API warnings
+        run: dart analyze --fatal-warnings
 
       - name: Format check
         working-directory: packages/void_signals_lint

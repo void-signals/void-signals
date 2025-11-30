@@ -638,6 +638,7 @@ void main() {
       createSignal();
       // At this point, signal should be eligible for GC
       // We can't force GC, but we can verify the weak reference behavior
+      expect(weakRef, isNotNull);
     });
 
     test('should not leak effects after stop', () {
